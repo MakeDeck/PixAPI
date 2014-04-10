@@ -1,0 +1,36 @@
+How exactly should this work
+
+Create json, and send
+
+
+Default black background and white text
+Example Text for Image 
+{
+  "version":"1.0.0",
+  "encoding":"UTF-8"
+  "width":100
+  "height":100
+  "background":"black"
+  "text":[
+    {
+      "text":"Here is some text",
+      "x":100,
+      "y":100,
+      "font_file":"Arial"
+      "font_url":"-------"
+      "rotation":90
+    }
+  ]
+}
+
+
+
+
+Authentication Flow
+ 1) User creates account at themakedeck.com
+ 2) Requests API key for specific application
+ 3) Past API key into code
+ 4) Connect with https
+ 5) pass api key with HTTP Auth
+ 6) On server side we increment the nubmer of received calls
+ 7) Drop request if at limit
