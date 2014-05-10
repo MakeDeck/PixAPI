@@ -7,7 +7,6 @@ Default black background and white text
 Example Text for Image 
 {
   "version":"1.0.0",
-  "encoding":"UTF-8"
   "width":100
   "height":100
   "background":"black"
@@ -22,8 +21,6 @@ Example Text for Image
     }
   ]
 }
-
-
 
 
 Authentication Flow

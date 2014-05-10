@@ -7,51 +7,7 @@
 
 import unittest
 import pixapi
-
-GOOD_INPUT_JSON = u"""
-{
-  "version":"1.0.0",
-  "encoding":"UTF-8",
-  "width":400,
-  "height":512,
-  "text":[
-    {
-      "text":"Here is some text",
-      "x":100,
-      "y":100
-    },
-    {
-      "text":"Here is some more text",
-      "x":50,
-      "y":50
-    }
-  ]
-}
-"""
-
-INVALID_FORMAT_JSON = u"""
-{
-  "version":"1.0.0",
-  "encoding":"UTF-8",
-  "width":400,
-  "height":512,
-  "format":"RGB"
-  "text":[
-    {
-      "text":"Here is some text",
-      "x":100,
-      "y":100
-    },
-    {
-      "text":"Here is some more text",
-      "x":50,
-      "y":50
-    }
-  ]
-}
-"""
-
-INVALID_JSON = u"{[}"
+from testutils import TestCase
 
 # Verify TextItem does not modify internal contents
 
@@ -65,14 +21,71 @@ INVALID_JSON = u"{[}"
 
 # Test with UTF-8 and ascii
 
-class PixApiTestCase(unittest.TestCase):
-    
+class PixApiGeneralTest(TestCase):
+  """
+  @brief Check how PixAPI responds to known good json!
+  """
+  input_json = u"""
+{
+  "version":"1.0.0",
+  "encoding":"UTF-8",
+  "width":400,
+  "height":512,
+  "format":"wif",
+  "text":[
+    {
+      "text":"Here is some text",
+      "x":100,
+      "y":100
+    },
+    {
+      "text":"Here is some more text",
+      "x":50,
+      "y":50
+    }
+  ]
+}
+"""
   def runTest(self):
-    print "Here is a test"
+    render = pixapi.PixRender(self.input_json)
     print pixapi
     
   def tearDown(self):
     pass
+    
+    
+class PixApiBadJsonTest(TestCase):
+  """
+  @brief Check how PixAPI responds to invalid json
+  """
+  INVALID_JSON = u"{[}"
+  def runTest(self):
+    self.assertRaises(ValueError, pixapi.PixRender, self.INVALID_JSON)
+
+    
+class PixApiBadFormatJsonTest(TestCase):
+  """
+  @brief Check how PixAPI responds to an invalid image format
+  """
+  input_json = u"""
+{
+  "version":"1.0.0",
+  "encoding":"UTF-8",
+  "width":10,
+  "height":10,
+  "format":"xxx",
+  "text":[
+    {
+      "text":"x",
+      "x":1,
+      "y":1
+    }
+  ]
+}
+"""
+  def runTest(self):
+    self.assertRaises(pixapi.ImageFormatError, pixapi.PixRender,
+                      self.input_json)
 
 if __name__ == '__main__':
   unittest.main()

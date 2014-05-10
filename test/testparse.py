@@ -7,9 +7,6 @@ import pixapi
 import logging
 import testutils
 
-
-
-
 #Make this into a formal test script 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

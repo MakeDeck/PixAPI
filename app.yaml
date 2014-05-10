@@ -1,5 +1,5 @@
-application: imptext
-version: 1-test
+application: imp-pix-api
+version: 1-0-test
 runtime: python27
 api_version: 1
 threadsafe: yes

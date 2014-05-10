@@ -1,4 +1,5 @@
 
+import unittest
 import Tkinter
 from PIL import Image, ImageTk
 
@@ -14,3 +15,13 @@ def SimpleShow(im):
     label_image = Tkinter.Label(root, image=tkpi)
     label_image.place(x=0,y=0,width=im.size[0],height=im.size[1])
     root.mainloop()
+
+"""
+Testing Helpers for eido
+
+"""
+
+class TestCase(unittest.TestCase):
+    def setUp(self):
+        modules = self.id().split('.')
+        print '\nIn Module: ', modules[-2], ' TestCase: ', modules[-1]

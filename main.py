@@ -14,45 +14,67 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Eventually I'd like to move to this kind of format
+# http://www.jsonrpc.org/specification#error_object - We should really have
+# everything work like this
+#
 
 import webapp2
 import logging
 from pixapi import PixRender
+from pixapi import VersionError, ImageFormatError, MissingRequiredKey
 # Add authentication library
 # from themakedeck import auth
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write('Electric Imp!')
+        self.response.write('Pix API')
 
 class ImageHandler(webapp2.RequestHandler):
     def get(self):
         self.post()
         
     def post(self):
+        # Check for correct headers here as well, application/json
         # Write the dispatch code here
         # Get the image, height, text, font and other things from the request
-        json_text = "{
-              "version":"1.0.0",
-              "encoding":"UTF-8",
-              "width":512
-              "height":512
-              "text":[
-                {
-                  "text":"Here is some text",
-                  "x":100,
-                  "y":100
-                }
-              ]
-         }")
-        try:
-          render = PixRender(json_text)
-          im = render.render_image()
-          self.response.content_type = "application/wif"
-          self.response.write(im.tostring())
-        except:
-          # Return an error in the http response as well
-          logging.error("Error in incoming message, add more to this message")
+          logging.info("Received new request for an image")
+          if self.request.headers['content_type'] != 'application/json':
+            logging.error('Invalid header received, expected content_type == '
+                          'application/json got: %s', self.request.headers['content_type'])
+            self.response.set_status(500)
+            self.response.write('Invalid headers, expected content_type =='
+                                ' application/json')
+            return
+          json_text = self.request.body
+          try:
+            render = PixRender(json_text)
+          except ValueError as e:
+            logging.error("Invalid json received, %s", e)
+            self.response.set_status(500)
+            self.response.write("Invalid json")
+            return
+          except MissingRequiredKey as e:
+            logging.error("A required key was missing, %s", e)
+            self.response.set_status(500)
+            self.response.write("Invalid json, Error Message: ")
+            self.response.write(str(e))
+            return
+          except VersionError as e:
+            logging.error("Value recieved is greater than we support %s", e)
+            self.response.set_status(500)
+            self.response.write("Version greater than supported version!")
+            return
+          except ImageFormatError as e:
+            logging.error("Image format unsupported! %s", e)
+            self.response.set_status(500)
+            self.response.write("Image format unspported! Error Message: ")
+            self.response.write(str(e))
+            return
+          data, content_type = render.render_image()
+          self.response.content_type = content_type
+          self.response.write(data)
+          logging.info("Image rendered")
         
         
 app = webapp2.WSGIApplication([
