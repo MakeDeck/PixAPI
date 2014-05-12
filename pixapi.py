@@ -22,6 +22,7 @@ FORMAT_RGB = 'RGB'
 FORMAT_1BIT = "1"
 VALID_FORMAT_TYPES = [FORMAT_WIF]
 JSON_ENCODING = 'UTF-8'
+FONTS_DIR = "fonts"
     
 def is_valid_format(format):
   """
@@ -91,18 +92,21 @@ class ImageFormatError(Exception):
 class MissingRequiredKey(Exception):
   pass
   
+class UnsupportedFont(Exception):
+  pass
 
 class PixRender(object):
   """
   @brief: This object exists solely to separate the image rendering and json
   parsing from the Web Interface so that it can be tested separately
   """
+  path = ''
   def __init__(self, input_json):
     """
     @brief Constructor requires json to initialize
     """
     self.render_item = self.parse_json(input_json)
-    
+  
   def parse_json(self, json_str):
     """
     @brief Takes in a UTF-8 string of json and returns an image object, and
@@ -239,6 +243,20 @@ class PixRender(object):
       # Here we need to check to see if the font file is already downloaded
       raise NotImplementedError("Font Urls are not yet supported")
     elif text_item.font != '':
+      font_size = 12
+      if (text_item.has_key('font_size')):
+        logging.info("Got a font_size: " + text_item['font_size'])
+        font_size = int(text_item['font_size'])
+      try:
+        return ImageFont.truetype(
+            os.path.join(FONT_PATH, text_item['font']), font_size)
+      except IOError:
+        logging.error("Unsupported Font requested: " + text_item['font'])
+        raise UnsupportedFontError(text_item.font + " font not supported!")
+      except:
+        logging.error("Unknown Error when attempting to load font")
+        return ImageFont.load_default()
+        
       raise NotImplementedError(
           "Fonts other than the default are not supported")
     return ImageFont.load_default()
