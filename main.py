@@ -46,7 +46,8 @@ class ImageHandler(webapp2.RequestHandler):
             self.response.write('Invalid headers, expected content_type =='
                                 ' application/json')
             return
-          json_text = self.request.body
+          # Get back a unicode string
+          json_text = self.request.body.decode('unicode_escape')
           try:
             render = PixRender(json_text)
           except ValueError as e:

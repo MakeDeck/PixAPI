@@ -4,9 +4,9 @@ import testutils
 from PIL import Image
 from StringIO import StringIO
 
-url = "http://imp-pix-api.appspot.com/image"
-# url = "http://192.168.0.5:8080/image"
-#url = "http://127.0.0.1:8080/image"
+# url = "http://imp-pix-api.appspot.com/image"
+# url = "http://192.168.0.8:8080/image"
+url = "http://127.0.0.1:8080/image"
 
 
 GOOD_INPUT_JSON = u"""
