@@ -11,6 +11,7 @@ File: jsonparser.py
 import json
 import logging
 import struct
+import os
 from pixversion import PixVersion
 from PIL import Image, ImageDraw, ImageFont
 
@@ -22,7 +23,8 @@ FORMAT_RGB = 'RGB'
 FORMAT_1BIT = "1"
 VALID_FORMAT_TYPES = [FORMAT_WIF]
 JSON_ENCODING = 'UTF-8'
-FONTS_DIR = "fonts"
+FONTS_DIR = "./fonts"
+DEFAULT_FONT_SIZE = 12
     
 def is_valid_format(format):
   """
@@ -72,7 +74,7 @@ class TextItem(object):
   color = 'black'
   font = ''
   font_url = ''
-  size = 12
+  size = DEFAULT_FONT_SIZE
   content_type = 'RGB'
   
   def __init__(self, text, pos):
@@ -162,10 +164,17 @@ class PixRender(object):
       text_list = json_dict['text']      
       for text_item in text_list:
         if text_item.has_key('x') and text_item.has_key('y') and \
-           text_item.has_key('text'):
+            text_item.has_key('text'):
           new_item = TextItem(text_item['text'], (text_item['x'], text_item['y']))
-          # Add optional items here with a if has key statement
-          # text_item_list.append(new_item)
+          if text_item.has_key('font'):
+            new_item.font = text_item['font']
+            
+          if text_item.has_key('font_url'):
+            new_item.font_url = text_item['font_url']
+          
+          if text_item.has_key('font_size'):
+            new_item.font_size = text_item['font_size']
+          
           render_item.add_text(new_item)
         else:
           raise LookupError(
@@ -239,22 +248,27 @@ class PixRender(object):
     draw.text(text_item.pos, text_item.text, font=myfont, fill=text_item.color)
     
   def get_font(self, text_item):
+    """
+    @brief Attemps to get a font from TextItem
+    @param text_item - expects a TextItem class
+    @return a ImageFont class, returns at worst the default bitmapped font
+    """
     if text_item.font_url != '':
       # Here we need to check to see if the font file is already downloaded
       raise NotImplementedError("Font Urls are not yet supported")
     elif text_item.font != '':
-      font_size = 12
-      if (text_item.has_key('font_size')):
-        logging.info("Got a font_size: " + text_item['font_size'])
-        font_size = int(text_item['font_size'])
+      logging.info("Got font: " + text_item.font)
+      logging.info("Got a font_size: %d", text_item.font_size)
+      font_size = int(text_item.font_size)
+      
       try:
         return ImageFont.truetype(
-            os.path.join(FONT_PATH, text_item['font']), font_size)
+            os.path.join(FONTS_DIR, text_item.font), font_size)
       except IOError:
         logging.error("Unsupported Font requested: " + text_item['font'])
         raise UnsupportedFontError(text_item.font + " font not supported!")
-      except:
-        logging.error("Unknown Error when attempting to load font")
+      except Exception as e:
+        logging.error("Unknown Error when attempting to load font: %s", e)
         return ImageFont.load_default()
         
       raise NotImplementedError(
