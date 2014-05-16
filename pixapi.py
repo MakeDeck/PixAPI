@@ -55,6 +55,7 @@ class RenderItem(object):
   def __init__(self, size):
     self.size = size
     self._text_items = []
+    self._image_items = []
 
   def __repr__(self):
     return ''.join(("RenderItem with size: ", str(self.size), self.background))
@@ -270,7 +271,7 @@ class PixRender(object):
     
     # Add images first!
     for image_item in self.render_item.image_items():
-      im = self.image_item_to_image(image_item, im)
+      self.image_item_to_image(image_item, im)
     
     # Now we draw text    
     draw = ImageDraw.Draw(im)
@@ -302,7 +303,7 @@ class PixRender(object):
     myfont = self.get_font(text_item)
     draw.text(text_item.pos, text_item.text, font=myfont, fill=text_item.color)
   
-  def image_item_to_image(self, image_item, draw):
+  def image_item_to_image(self, image_item, input_image):
     """
     @brief Draws an image onto the draw surface
     @param image_item a fully populated image item
@@ -312,8 +313,11 @@ class PixRender(object):
     logging.info("Attempting to draw new image")
     logging.info("Url: " + image_item.url)
     im = self.image_store.FetchImageFromURL(image_item.url)
-    draw.paste(im, image_item.pos)
-    return draw
+    logging.debug("Image is size: %s, and mode: %s", im.size, im.mode)
+    if im.mode == "RGBA":
+      input_image.paste(im, image_item.pos, im)
+    else:
+      input_image.paste(im, image_item.pos)
     
     
   def get_font(self, text_item):
@@ -354,6 +358,7 @@ class ImageStore(object):
       return self.store[url]
     else:
       fd = urllib.urlopen(url)
+      # Check content type here, to make sure its a valid type we can render!
       image_file = io.BytesIO(fd.read())
       im = Image.open(image_file)
       self.store[url] = im
