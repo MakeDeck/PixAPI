@@ -21,10 +21,12 @@
 
 import webapp2
 import logging
-from pixapi import PixRender
+from pixapi import PixRender, ImageStore
 from pixapi import VersionError, ImageFormatError, MissingRequiredKey
 # Add authentication library
 # from themakedeck import auth
+
+imageStore = ImageStore()
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
@@ -48,7 +50,7 @@ class ImageHandler(webapp2.RequestHandler):
             return
           json_text = self.request.body
           try:
-            render = PixRender(json_text)
+            render = PixRender(json_text, imageStore)
           except ValueError as e:
             logging.error("Invalid json received, %s", e)
             self.response.set_status(500)

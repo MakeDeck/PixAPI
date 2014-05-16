@@ -21,6 +21,10 @@ from testutils import TestCase
 
 # Test with UTF-8 and ascii
 
+class MockImageStore():
+  def FetchImageFromURL(url):
+    return
+
 class PixApiGeneralTest(TestCase):
   """
   @brief Check how PixAPI responds to known good json!
@@ -47,7 +51,7 @@ class PixApiGeneralTest(TestCase):
 }
 """
   def runTest(self):
-    render = pixapi.PixRender(self.input_json)
+    render = pixapi.PixRender(self.input_json, MockImageStore())
     print pixapi
     
   def tearDown(self):
@@ -60,7 +64,8 @@ class PixApiBadJsonTest(TestCase):
   """
   INVALID_JSON = u"{[}"
   def runTest(self):
-    self.assertRaises(ValueError, pixapi.PixRender, self.INVALID_JSON)
+    self.assertRaises(ValueError, pixapi.PixRender, self.INVALID_JSON,
+                      MockImageStore())
 
     
 class PixApiBadFormatJsonTest(TestCase):
@@ -85,7 +90,7 @@ class PixApiBadFormatJsonTest(TestCase):
 """
   def runTest(self):
     self.assertRaises(pixapi.ImageFormatError, pixapi.PixRender,
-                      self.input_json)
+                      self.input_json, MockImageStore())
 
 if __name__ == '__main__':
   unittest.main()
