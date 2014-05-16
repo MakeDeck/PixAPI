@@ -8,16 +8,16 @@ http://stackoverflow.com/questions/1896918/running-unittest-with-typical-test-di
 
 import os
 import unittest
-
-__all__ = ['test_service']
+import logging
 
 def create_test_suite(root='.'):
     module_strings  = find_tests_recursively('test', root)
-    print 'Found ', len(module_strings), ' modules.'
-    print module_strings
-    print 'Attempting to import...'
+    logging.info('Found %s modules.', len(module_strings))
+    logging.debug("Module strings: %s", module_strings)
+    logging.info('Attempting to import...')
     suites = [unittest.defaultTestLoader.loadTestsFromName(name) \
           for name in module_strings]
+    logging.debug("Test suites found: %s", suites)
     testSuite = unittest.TestSuite(suites)
     return testSuite
 
@@ -37,4 +37,5 @@ def find_tests_recursively(parent_module, path=None):
         elif os.path.isdir(full_path):
             module_strings.extend(
                     find_tests_recursively(parent_module+'.'+f, full_path))
+    logging.debug(module_strings)
     return module_strings
