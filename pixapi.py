@@ -8,12 +8,19 @@ File: jsonparser.py
 # http://www.jsonrpc.org/specification#error_object - We should really have
 # everything work like this
 
+
 import json
 import logging
 import struct
 import os
+import urllib2 as urllib
+import io
 from pixversion import PixVersion
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
+try:
+  from PIL import ImageFont
+except:
+  logging.error("Could not import ImageFront")
 
 
 __version__ = PixVersion("1.0.0")
@@ -43,6 +50,7 @@ class RenderItem(object):
   background="white"
   format=FORMAT_WIF
   _text_items = []
+  _image_items = []
   
   def __init__(self, size):
     self.size = size
@@ -62,6 +70,12 @@ class RenderItem(object):
     
   def text_items(self):
     return self._text_items
+    
+  def add_image(self, image_item):
+    self._image_items.append(image_item)
+    
+  def image_items(self):
+    return self._image_items
 
     
 class TextItem(object):
@@ -84,7 +98,29 @@ class TextItem(object):
   def __repr__(self):
     return ''.join(("TextItem with text: ", self.text, str(self.pos)))
  
- 
+class ImageItem(object):
+  """
+  @brief Container class used by the json parser to output image objects found
+  in the json
+  """
+  pos = (0,0)
+  url = ''
+  width = 0
+  height = 0
+  
+  def __init__(self, url, pos):
+    self.url = url
+    self.pos = pos
+    
+  def __repr__(self):
+    return ''.join(("ImageItem with url: ", self.url, str(self.pos)))
+    
+  def setWidth(width):
+    self.width = width
+    
+  def setHeight(height):
+    self.height = height
+    
 class VersionError(Exception):
   pass
 
@@ -102,12 +138,15 @@ class PixRender(object):
   @brief: This object exists solely to separate the image rendering and json
   parsing from the Web Interface so that it can be tested separately
   """
-  path = ''
-  def __init__(self, input_json):
+  
+  def __init__(self, input_json, image_store):
     """
     @brief Constructor requires json to initialize
+    @param input_json an input string formated as json
+    @param image_store an image store object to store retrieved images
     """
     self.render_item = self.parse_json(input_json)
+    self.image_store = image_store
   
   def parse_json(self, json_str):
     """
@@ -144,9 +183,9 @@ class PixRender(object):
       raise MissingRequiredKey(" 'format' required key is missing")
     
     logging.info("type of json_dict %s", type(json_dict))
-    if json_dict.has_key('text') == False:
-      raise MissingRequiredKey("Missing 'text' key which should be a list of"
-                               " json objects")
+    #if json_dict.has_key('text') == False:
+    #  raise MissingRequiredKey("Missing 'text' key which should be a list of"
+    #                           " json objects")
     
     # Check for required height, and width key
     if json_dict.has_key('height') and json_dict.has_key('width'):
@@ -180,6 +219,16 @@ class PixRender(object):
           raise LookupError(
               "Text item does not have all required keys,"
               "A text item must have keys - x(int), y(int), text(string)!")
+              
+    if json_dict.has_key('image'):
+      image_list = json_dict['image']
+      for image_item in image_list:
+        if image_item.has_key('x') and image_item.has_key('y') and \
+            image_item.has_key('url'):
+          new_image = ImageItem(image_item['url'],
+                                (image_item['x'], image_item['y']))
+          render_item.add_image(new_image)
+          
     return render_item
     
 
@@ -218,6 +267,12 @@ class PixRender(object):
     """
     logging.info("Attempting to create new Image")
     im = Image.new("RGB", self.render_item.size, self.render_item.background)
+    
+    # Add images first!
+    for image_item in self.render_item.image_items():
+      im = self.image_item_to_image(image_item, im)
+    
+    # Now we draw text    
     draw = ImageDraw.Draw(im)
     for text_item in self.render_item.text_items():
       self.text_to_image(text_item, draw)
@@ -246,10 +301,24 @@ class PixRender(object):
     logging.info("Text: " + text_item.text)
     myfont = self.get_font(text_item)
     draw.text(text_item.pos, text_item.text, font=myfont, fill=text_item.color)
+  
+  def image_item_to_image(self, image_item, draw):
+    """
+    @brief Draws an image onto the draw surface
+    @param image_item a fully populated image item
+    @param draw is a ImageDraw class to draw onto
+    @return A new composited image
+    """
+    logging.info("Attempting to draw new image")
+    logging.info("Url: " + image_item.url)
+    im = self.image_store.FetchImageFromURL(image_item.url)
+    draw.paste(im, image_item.pos)
+    return draw
+    
     
   def get_font(self, text_item):
     """
-    @brief Attemps to get a font from TextItem
+    @brief Attempts to get a font from TextItem
     @param text_item - expects a TextItem class
     @return a ImageFont class, returns at worst the default bitmapped font
     """
@@ -274,3 +343,19 @@ class PixRender(object):
       raise NotImplementedError(
           "Fonts other than the default are not supported")
     return ImageFont.load_default()
+
+class ImageStore(object):
+  def __init__(self):
+    self.store = {} #Stores images with the url as a key and image as value
+                    # Replace this with memcache eventually
+  def FetchImageFromURL(self, url):
+    # Do we need to format the url here? This is probably a security risk?
+    if self.store.has_key(url):
+      return self.store[url]
+    else:
+      fd = urllib.urlopen(url)
+      image_file = io.BytesIO(fd.read())
+      im = Image.open(image_file)
+      self.store[url] = im
+      return im
+  
