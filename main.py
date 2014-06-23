@@ -21,6 +21,7 @@
 
 import webapp2
 import logging
+from google.appengine.api import users
 from pixapi import PixRender, ImageStore
 from pixapi import VersionError, ImageFormatError, MissingRequiredKey
 # Add authentication library
@@ -37,10 +38,11 @@ class ImageHandler(webapp2.RequestHandler):
         self.post()
         
     def post(self):
-        # Check for correct headers here as well, application/json
-        # Write the dispatch code here
-        # Get the image, height, text, font and other things from the request
+          # Check for correct headers here as well, application/json
+          # Write the dispatch code here
+          # Get the image, height, text, font and other things from the request
           logging.info("Received new request for an image")
+          # Check Auth here
           if self.request.headers['content_type'] != 'application/json':
             logging.error('Invalid header received, expected content_type == '
                           'application/json got: %s', self.request.headers['content_type'])
@@ -78,8 +80,32 @@ class ImageHandler(webapp2.RequestHandler):
           self.response.write(data)
           logging.info("Image rendered")
         
-        
+class ManagementHandler(webapp2.RequestHandler):
+    def get(self):
+        """
+        Serve the Api Key management service
+        """
+        user = users.get_current_user()
+        if user:
+            self.response.write('Place Holder')
+        else:
+            self.redirect(users.create_login_url(self.request.uri))
+        return
+    
+    def post(self):
+        """
+        Post a request for a new key
+        """
+        user = users.get_current_user()
+        if user:
+            self.response.write('Place Holder')
+        else:
+          self.response.set_status(500)
+          self.response.write("Invalid User")
+        return
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
-    ('/image', ImageHandler)
+    ('/image', ImageHandler),
+    ('/manage', ManagementHandler)
 ], debug=True)
