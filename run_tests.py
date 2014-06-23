@@ -1,6 +1,6 @@
 """
-Name: Sean Sill
-Description: Runs all unittests
+Author: Sean Sill
+Description: Runs all unittests in directory
 """
 
 import os, sys
