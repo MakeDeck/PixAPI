@@ -1,0 +1,13 @@
+<html>
+  <body>
+    <div>
+    {% for key in keys %}
+    <div class='key'>{{ key }}</div>
+    {% endfor %}
+    </div>
+    <form action="/key" method="post">
+      <div><textarea name="content" rows="3" cols="60"></textarea></div>
+      <div><input type="submit" value="Add Key"></div>
+    </form>
+  </body>
+</html>
