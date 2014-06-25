@@ -1,3 +1,7 @@
 *.pyc
 *.ico
 
+
+# Folders #
+###########
+test/temp_storage
